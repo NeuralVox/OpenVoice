@@ -13,10 +13,7 @@ from openvoice.models import SynthesizerTrn
 
 class OpenVoiceBaseClass(object):
     def __init__(self, 
-                config_path, 
-                device='cuda:0'):
-        if 'cuda' in device:
-            assert torch.cuda.is_available()
+                config_path):
 
         hps = utils.get_hparams_from_file(config_path)
 
@@ -25,12 +22,12 @@ class OpenVoiceBaseClass(object):
             hps.data.filter_length // 2 + 1,
             n_speakers=hps.data.n_speakers,
             **hps.model,
-        ).to(device)
+        ).to('cuda')
 
         model.eval()
         self.model = model
         self.hps = hps
-        self.device = device
+        self.device='cuda'
 
     def load_ckpt(self, ckpt_path):
         checkpoint_dict = torch.load(ckpt_path, map_location=torch.device(self.device))
@@ -104,7 +101,7 @@ class ToneColorConverter(OpenVoiceBaseClass):
 
         if kwargs.get('enable_watermark', True):
             import wavmark
-            self.watermark_model = wavmark.load_model().to(self.device)
+            self.watermark_model = wavmark.load_model().to('cuda')
         else:
             self.watermark_model = None
         self.version = getattr(self.hps, '_version_', "v1")
